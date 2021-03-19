@@ -35,13 +35,6 @@ jobs:
             os: ubuntu-latest
             experimental: true
     services:
-      minio:
-        image: minio/minio:latest
-        volumes:
-          - data:/data
-        ports:
-          - 9000:9000
-        command: server /data
       postgres:
         image: postgres:${{ matrix.postgres }}
         ports:
