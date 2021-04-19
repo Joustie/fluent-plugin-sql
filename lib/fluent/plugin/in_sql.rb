@@ -50,6 +50,10 @@ module Fluent::Plugin
     config_param :s3_bucket_name, :string, default: nil
     desc 'S3 bucket key (optional)'
     config_param :s3_bucket_key, :string, default: nil
+    desc 'S3 encryption type (optional)'
+    config_param :s3_encryption_type, :string, default: nil
+    desc 'S3 bucket KMS key (full ARN or id) (optional)'
+    config_param :s3_bucket_kms_key, :string, default: nil
     desc 'AWS region (optional)'
     config_param :aws_region, :string, default: nil
     desc 'prefix of tags of events. actual tag will be this_tag_prefix.tables_tag (optional)'
@@ -354,11 +358,22 @@ module Fluent::Plugin
       def update!
         s3_client = Aws::S3::Client.new(region: @region)
 
-        response = s3_client.put_object(
-          bucket: @bucket_name ,
-          key: @object_key ,
-          body: YAML.dump(@data)
-        )
+        if @s3_encryption_type == "aws:kms"
+          response = s3_client.put_object(
+              bucket: @bucket_name ,
+              server_side_encryption: @s3_encryption_type,
+              ssekms_key_id: @s3_bucket_kms_key,
+              key: @object_key ,
+              body: YAML.dump(@data)
+          )
+        else
+          response = s3_client.put_object(
+              bucket: @bucket_name ,
+              key: @object_key ,
+              body: YAML.dump(@data)
+          )
+        end
+
         if response.etag
           return true
         else
